@@ -1660,7 +1660,17 @@ Cargo Type: General Cargo / Steel Products`
     // MAIN APP
     // ─────────────────────────────────────────────────────────────────────────────
     function App() {
-      const [records, setRecords] = useState(INITIAL_RECORDS);
+      const [records, setRecords] = useState(() => {
+        const stored = localStorage.getItem('shipmail_records');
+        if (stored) {
+          try {
+            return JSON.parse(stored);
+          } catch (e) {
+            console.error("Failed to parse stored shipmail records:", e);
+          }
+        }
+        return INITIAL_RECORDS;
+      });
       const [emailText, setEmailText] = useState('');
       const [processing, setProcessing] = useState(false);
       const [result, setResult] = useState(null); // { cat, confidence, fields }
@@ -1672,6 +1682,10 @@ Cargo Type: General Cargo / Steel Products`
       const [matchedIds, setMatchedIds] = useState(new Set());
       const [toasts, setToasts] = useState([]);
       const toastId = useRef(0);
+
+      useEffect(() => {
+        localStorage.setItem('shipmail_records', JSON.stringify(records));
+      }, [records]);
 
       const addToast = useCallback((msg, type = 'success', icon = '✓') => {
         const id = ++toastId.current;
@@ -1711,8 +1725,12 @@ Cargo Type: General Cargo / Steel Products`
       // Save
       const save = () => {
         if (!result || saved) return;
+        
+        // Generate a unique ID based on existing records to avoid conflicts across refreshes
+        const maxId = records.reduce((max, r) => (typeof r.id === 'number' && r.id > max) ? r.id : max, 100);
+
         const rec = {
-          id: makeId(),
+          id: maxId + 1,
           cat: result.cat,
           confidence: result.confidence,
           fields: result.fields,
