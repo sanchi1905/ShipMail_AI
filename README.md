@@ -12,7 +12,7 @@
 **An end-to-end AI-powered shipping email segregation and structured data extraction system.**  
 Classifies raw maritime emails into Tonnage, Cargo VC, and Cargo TC — entirely using rule-based NLP with zero external API dependencies.
 
-**Developed by [Sanchi Sisodia](https://github.com/sanchi1905) · Live Evaluation: 4 June 2026**
+**Developed by [Sanchi Sisodia](https://github.com/sanchi1905) **
 
 </div>
 
@@ -48,7 +48,7 @@ ShipMail AI is a **production-grade, single-file web application** built for the
 
 ## 🔗 Live Demo
 
-**👉 [https://sanchi1905.github.io/ShipMail_AI/](https://sanchi1905.github.io/ShipMail_AI/)**
+**👉 [https://sanchi1905.github.io/ShipMail_AI/](https://shipmail-ai.netlify.app/)**
 
 Or run locally by simply opening `index.html` in any modern browser — no server or build step required.
 
@@ -235,24 +235,9 @@ shipmail-ai/
 
 ---
 
-## 🏆 Evaluation Criteria
 
-| Criterion | Implementation |
-|---|---|
-| ✅ Classification accuracy | 30–45 domain signals per category with confidence scoring |
-| ✅ Completeness of extraction | 6–7 structured fields per category |
-| ✅ UI polish & impressiveness | Maritime theme, glassmorphism, 10+ CSS animations |
-| ✅ Speed & smoothness | < 100ms classification, CSS GPU-accelerated animations |
-| ✅ Scalability of engine | Signal arrays easily extended; scoring is O(n) |
-| ✅ Vessel-cargo matching (bonus) | 🔗 Match button on Tonnage rows highlights compatible cargo |
-| ✅ Zero external LLM dependency | Pure JS regex, no API keys needed |
-
----
 
 <div align="center">
-
-**ShipMail AI** · IME Shipping Email Intelligence Platform  
-Built for Live Evaluation **4 June 2026**
 
 Developed with ❤️ by **[Sanchi Sisodia](https://github.com/sanchi1905)**
 
