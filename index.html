@@ -1,0 +1,2152 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ShipMail AI — Shipping Email Intelligence Platform by IME</title>
+  <meta name="description"
+    content="AI-powered shipping email segregation and data extraction system for intelligent maritime operations. Classify Tonnage, Cargo VC, and Cargo TC emails instantly." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+    rel="stylesheet" />
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    /* ===== DESIGN TOKENS ===== */
+    :root {
+      --navy: #0A1628;
+      --navy-light: #0D1F3C;
+      --navy-mid: #112244;
+      --teal: #00B4D8;
+      --teal-light: #48CAE4;
+      --teal-dark: #0096C7;
+      --gold: #F4A261;
+      --gold-light: #FFB380;
+      --gold-dark: #E76F51;
+      --blue-badge: #2563EB;
+      --green-badge: #059669;
+      --amber-badge: #D97706;
+      --white: #F8FAFC;
+      --gray-100: #E2E8F0;
+      --gray-200: #CBD5E1;
+      --gray-400: #94A3B8;
+      --gray-600: #475569;
+      --glass: rgba(255, 255, 255, 0.04);
+      --glass-hover: rgba(255, 255, 255, 0.08);
+      --border: rgba(255, 255, 255, 0.08);
+      --border-teal: rgba(0, 180, 216, 0.25);
+      --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.5);
+      --shadow-teal: 0 0 30px rgba(0, 180, 216, 0.15);
+      --radius: 16px;
+      --radius-sm: 10px;
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--navy);
+      color: var(--white);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ===== WAVE BACKGROUND ===== */
+    .wave-bg {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+
+    .wave-bg::before {
+      content: '';
+      position: absolute;
+      bottom: -60px;
+      left: -10%;
+      width: 120%;
+      height: 200px;
+      background: linear-gradient(180deg, transparent 0%, rgba(0, 180, 216, 0.04) 100%);
+      border-radius: 50%;
+      animation: wave1 8s ease-in-out infinite;
+    }
+
+    .wave-bg::after {
+      content: '';
+      position: absolute;
+      bottom: -80px;
+      left: -15%;
+      width: 130%;
+      height: 220px;
+      background: linear-gradient(180deg, transparent 0%, rgba(0, 150, 199, 0.03) 100%);
+      border-radius: 50%;
+      animation: wave2 11s ease-in-out infinite reverse;
+    }
+
+    @keyframes wave1 {
+
+      0%,
+      100% {
+        transform: translateX(0) scaleY(1);
+      }
+
+      50% {
+        transform: translateX(2%) scaleY(1.05);
+      }
+    }
+
+    @keyframes wave2 {
+
+      0%,
+      100% {
+        transform: translateX(0) scaleY(1);
+      }
+
+      50% {
+        transform: translateX(-2%) scaleY(1.08);
+      }
+    }
+
+    /* ===== PARTICLE SHIMMER ===== */
+    .shimmer-container {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .particle {
+      position: absolute;
+      border-radius: 50%;
+      animation: float linear infinite;
+      opacity: 0;
+    }
+
+    @keyframes float {
+      0% {
+        transform: translateY(100vh) scale(0);
+        opacity: 0;
+      }
+
+      10% {
+        opacity: 0.6;
+      }
+
+      90% {
+        opacity: 0.2;
+      }
+
+      100% {
+        transform: translateY(-20px) scale(1.2);
+        opacity: 0;
+      }
+    }
+
+    /* ===== LAYOUT ===== */
+    .app {
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ===== HEADER ===== */
+    .header {
+      background: linear-gradient(135deg, #071020 0%, #0D1F3C 60%, #0a1f35 100%);
+      border-bottom: 1px solid var(--border-teal);
+      padding: 0;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 4px 40px rgba(0, 0, 0, 0.4);
+    }
+
+    .header-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 32px;
+      gap: 24px;
+      flex-wrap: wrap;
+    }
+
+    .logo-group {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .logo-icon {
+      width: 52px;
+      height: 52px;
+      background: linear-gradient(135deg, var(--teal-dark), var(--teal));
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 26px;
+      box-shadow: 0 0 20px rgba(0, 180, 216, 0.35);
+      animation: shipBob 3s ease-in-out infinite;
+      flex-shrink: 0;
+    }
+
+    @keyframes shipBob {
+
+      0%,
+      100% {
+        transform: translateY(0) rotate(-2deg);
+      }
+
+      50% {
+        transform: translateY(-5px) rotate(2deg);
+      }
+    }
+
+    .logo-text {
+      line-height: 1.1;
+    }
+
+    .logo-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.7rem;
+      font-weight: 700;
+      background: linear-gradient(90deg, #fff 0%, var(--teal-light) 60%, var(--gold) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: -0.5px;
+    }
+
+    .logo-sub {
+      font-size: 0.72rem;
+      color: var(--gray-400);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+
+    .header-stats {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .stat-pill {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: var(--glass);
+      border: 1px solid var(--border);
+      border-radius: 40px;
+      font-size: 0.78rem;
+      font-weight: 500;
+      color: var(--gray-200);
+      transition: all 0.3s;
+    }
+
+    .stat-pill:hover {
+      background: var(--glass-hover);
+    }
+
+    .stat-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      animation: pulse-dot 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse-dot {
+
+      0%,
+      100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+
+      50% {
+        transform: scale(1.4);
+        opacity: 0.7;
+      }
+    }
+
+    .stat-val {
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 700;
+      font-size: 1rem;
+    }
+
+    /* ===== MAIN CONTENT ===== */
+    .main {
+      padding: 28px 32px;
+      max-width: 1600px;
+      margin: 0 auto;
+    }
+
+    /* ===== PANEL GRID ===== */
+    .panels-grid {
+      display: grid;
+      grid-template-columns: 2fr 3fr;
+      gap: 24px;
+      margin-bottom: 28px;
+    }
+
+    @media (max-width: 900px) {
+      .panels-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* ===== GLASS CARD ===== */
+    .glass-card {
+      background: linear-gradient(135deg, rgba(13, 31, 60, 0.9) 0%, rgba(11, 26, 50, 0.95) 100%);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-lg);
+      overflow: hidden;
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 18px 22px 14px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .card-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+
+    .card-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 600;
+      font-size: 0.95rem;
+      letter-spacing: 0.3px;
+    }
+
+    .card-sub {
+      font-size: 0.72rem;
+      color: var(--gray-400);
+      margin-top: 1px;
+    }
+
+    /* ===== INPUT PANEL ===== */
+    .input-panel {
+      padding: 20px 22px;
+    }
+
+    .textarea-wrapper {
+      position: relative;
+      margin-bottom: 16px;
+    }
+
+    .email-textarea {
+      width: 100%;
+      min-height: 260px;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--white);
+      font-family: 'Inter', monospace;
+      font-size: 0.82rem;
+      line-height: 1.65;
+      padding: 16px;
+      resize: vertical;
+      outline: none;
+      transition: border-color 0.3s, box-shadow 0.3s;
+    }
+
+    .email-textarea:focus {
+      border-color: var(--teal);
+      box-shadow: 0 0 0 3px rgba(0, 180, 216, 0.12);
+    }
+
+    .email-textarea::placeholder {
+      color: var(--gray-600);
+    }
+
+    .char-count {
+      position: absolute;
+      bottom: 10px;
+      right: 12px;
+      font-size: 0.68rem;
+      color: var(--gray-600);
+    }
+
+    .analyze-btn {
+      width: 100%;
+      padding: 15px;
+      background: linear-gradient(135deg, var(--teal-dark), var(--teal));
+      border: none;
+      border-radius: var(--radius-sm);
+      color: white;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.3s;
+      letter-spacing: 0.5px;
+      box-shadow: 0 4px 20px rgba(0, 180, 216, 0.3);
+    }
+
+    .analyze-btn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px rgba(0, 180, 216, 0.45);
+    }
+
+    .analyze-btn:active:not(:disabled) {
+      transform: translateY(0);
+    }
+
+    .analyze-btn:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+    }
+
+    .btn-ripple {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.25);
+      animation: ripple 0.6s linear;
+      pointer-events: none;
+    }
+
+    @keyframes ripple {
+      from {
+        width: 0;
+        height: 0;
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(0);
+      }
+
+      to {
+        width: 300px;
+        height: 300px;
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(1);
+      }
+    }
+
+    /* ===== PROCESSING STATE ===== */
+    .processing-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      padding: 30px;
+    }
+
+    .radar-ring {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      border: 3px solid transparent;
+      border-top-color: var(--teal);
+      border-right-color: rgba(0, 180, 216, 0.3);
+      animation: radarSpin 1s linear infinite;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .radar-ring::after {
+      content: '';
+      position: absolute;
+      width: 60%;
+      height: 60%;
+      border-radius: 50%;
+      border: 2px solid rgba(0, 180, 216, 0.5);
+      border-top-color: var(--gold);
+      animation: radarSpin 0.7s linear infinite reverse;
+    }
+
+    @keyframes radarSpin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .processing-text {
+      font-size: 0.88rem;
+      color: var(--teal-light);
+      animation: blink 1.5s ease-in-out infinite;
+    }
+
+    @keyframes blink {
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0.4;
+      }
+    }
+
+    /* ===== RESULT BADGE ===== */
+    .result-badge {
+      margin-top: 16px;
+      padding: 14px 18px;
+      border-radius: var(--radius-sm);
+      border: 1.5px solid;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      animation: slideIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px) scale(0.97);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    .badge-tonnage {
+      background: rgba(37, 99, 235, 0.12);
+      border-color: rgba(37, 99, 235, 0.4);
+    }
+
+    .badge-vc {
+      background: rgba(5, 150, 105, 0.12);
+      border-color: rgba(5, 150, 105, 0.4);
+    }
+
+    .badge-tc {
+      background: rgba(217, 119, 6, 0.12);
+      border-color: rgba(217, 119, 6, 0.4);
+    }
+
+    .badge-unknown {
+      background: rgba(100, 116, 139, 0.12);
+      border-color: rgba(100, 116, 139, 0.4);
+    }
+
+    .badge-label {
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 700;
+      font-size: 1.05rem;
+    }
+
+    .badge-conf-bar {
+      flex: 1;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .badge-conf-fill {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 1s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    /* ===== EXTRACTION PANEL ===== */
+    .extraction-panel {
+      padding: 20px 22px;
+    }
+
+    .skeleton {
+      background: linear-gradient(90deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.1) 50%, rgba(255, 255, 255, 0.05) 100%);
+      background-size: 200% 100%;
+      animation: skeleton-shimmer 1.5s infinite;
+      border-radius: 6px;
+      height: 20px;
+      margin-bottom: 10px;
+    }
+
+    @keyframes skeleton-shimmer {
+      0% {
+        background-position: -200% 0;
+      }
+
+      100% {
+        background-position: 200% 0;
+      }
+    }
+
+    .extracted-card {
+      background: rgba(0, 0, 0, 0.25);
+      border: 1px solid var(--border-teal);
+      border-radius: var(--radius-sm);
+      padding: 18px;
+      animation: cardFlip 0.5s ease forwards;
+    }
+
+    @keyframes cardFlip {
+      from {
+        opacity: 0;
+        transform: rotateX(-10deg) translateY(10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: rotateX(0deg) translateY(0);
+      }
+    }
+
+    .field-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      animation: fieldSlide 0.4s ease forwards;
+      opacity: 0;
+    }
+
+    @keyframes fieldSlide {
+      from {
+        opacity: 0;
+        transform: translateX(-8px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    .field-row:last-child {
+      border-bottom: none;
+    }
+
+    .field-key {
+      font-size: 0.72rem;
+      color: var(--gray-400);
+      font-weight: 600;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      min-width: 130px;
+      padding-top: 1px;
+    }
+
+    .field-val {
+      font-size: 0.85rem;
+      color: var(--white);
+      font-weight: 500;
+      flex: 1;
+    }
+
+    .field-val.empty {
+      color: var(--gray-600);
+      font-style: italic;
+    }
+
+    .save-btn {
+      width: 100%;
+      margin-top: 16px;
+      padding: 13px;
+      background: linear-gradient(135deg, #059669, #10b981);
+      border: none;
+      border-radius: var(--radius-sm);
+      color: white;
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 700;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: all 0.3s;
+      box-shadow: 0 4px 15px rgba(5, 150, 105, 0.3);
+    }
+
+    .save-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(5, 150, 105, 0.4);
+    }
+
+    .save-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* ===== DATABASE TABLE ===== */
+    .db-section {
+      margin-top: 0;
+    }
+
+    .db-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px 22px;
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+
+    .tab-bar {
+      display: flex;
+      gap: 4px;
+      background: rgba(0, 0, 0, 0.3);
+      padding: 4px;
+      border-radius: 10px;
+    }
+
+    .tab-btn {
+      padding: 7px 16px;
+      border: none;
+      background: transparent;
+      color: var(--gray-400);
+      font-family: 'Inter', sans-serif;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      border-radius: 7px;
+      transition: all 0.25s;
+      white-space: nowrap;
+    }
+
+    .tab-btn.active {
+      background: var(--navy-mid);
+      color: var(--white);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    .tab-btn:hover:not(.active) {
+      color: var(--white);
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .search-input {
+      flex: 1;
+      min-width: 200px;
+      padding: 9px 16px;
+      background: rgba(0, 0, 0, 0.25);
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      color: var(--white);
+      font-size: 0.83rem;
+      outline: none;
+      transition: border-color 0.25s;
+    }
+
+    .search-input:focus {
+      border-color: var(--teal);
+    }
+
+    .search-input::placeholder {
+      color: var(--gray-600);
+    }
+
+    .export-btn {
+      padding: 9px 18px;
+      background: var(--glass);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--gray-200);
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.25s;
+    }
+
+    .export-btn:hover {
+      background: var(--glass-hover);
+      border-color: var(--teal);
+      color: var(--teal-light);
+    }
+
+    .db-table-wrap {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    thead tr {
+      background: rgba(0, 0, 0, 0.3);
+      border-bottom: 1px solid var(--border);
+    }
+
+    th {
+      padding: 12px 16px;
+      text-align: left;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--gray-400);
+      white-space: nowrap;
+    }
+
+    tbody tr {
+      border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+      transition: background 0.2s;
+      cursor: pointer;
+    }
+
+    tbody tr:hover {
+      background: var(--glass-hover);
+    }
+
+    tbody tr.tonnage-row:hover {
+      background: rgba(37, 99, 235, 0.07);
+      box-shadow: inset 3px 0 0 rgba(37, 99, 235, 0.6);
+    }
+
+    tbody tr.vc-row:hover {
+      background: rgba(5, 150, 105, 0.07);
+      box-shadow: inset 3px 0 0 rgba(5, 150, 105, 0.6);
+    }
+
+    tbody tr.tc-row:hover {
+      background: rgba(217, 119, 6, 0.07);
+      box-shadow: inset 3px 0 0 rgba(217, 119, 6, 0.6);
+    }
+
+    tbody tr.matched {
+      background: rgba(244, 162, 97, 0.08) !important;
+      box-shadow: inset 3px 0 0 var(--gold) !important;
+    }
+
+    td {
+      padding: 12px 16px;
+      font-size: 0.82rem;
+      color: var(--gray-200);
+      vertical-align: middle;
+    }
+
+    .cat-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+    }
+
+    .chip-tonnage {
+      background: rgba(37, 99, 235, 0.2);
+      color: #60a5fa;
+      border: 1px solid rgba(37, 99, 235, 0.35);
+    }
+
+    .chip-vc {
+      background: rgba(5, 150, 105, 0.2);
+      color: #34d399;
+      border: 1px solid rgba(5, 150, 105, 0.35);
+    }
+
+    .chip-tc {
+      background: rgba(217, 119, 6, 0.2);
+      color: #fbbf24;
+      border: 1px solid rgba(217, 119, 6, 0.35);
+    }
+
+    .chip-unknown {
+      background: rgba(100, 116, 139, 0.2);
+      color: #94a3b8;
+      border: 1px solid rgba(100, 116, 139, 0.35);
+    }
+
+    .match-btn {
+      padding: 5px 12px;
+      background: linear-gradient(135deg, rgba(244, 162, 97, 0.15), rgba(231, 111, 81, 0.15));
+      border: 1px solid rgba(244, 162, 97, 0.4);
+      border-radius: 6px;
+      color: var(--gold-light);
+      font-size: 0.72rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.25s;
+      white-space: nowrap;
+    }
+
+    .match-btn:hover {
+      background: linear-gradient(135deg, rgba(244, 162, 97, 0.25), rgba(231, 111, 81, 0.25));
+      box-shadow: 0 0 12px rgba(244, 162, 97, 0.2);
+    }
+
+    .highlight mark {
+      background: rgba(0, 180, 216, 0.25);
+      color: var(--teal-light);
+      border-radius: 2px;
+    }
+
+    .expand-row td {
+      background: rgba(0, 0, 0, 0.3);
+      padding: 16px 22px;
+    }
+
+    .expanded-fields {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 12px;
+    }
+
+    .exp-field {
+      background: var(--glass);
+      border-radius: 8px;
+      padding: 10px 14px;
+    }
+
+    .exp-key {
+      font-size: 0.68rem;
+      color: var(--gray-400);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 4px;
+    }
+
+    .exp-val {
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--white);
+    }
+
+    /* ===== TOAST ===== */
+    .toast-container {
+      position: fixed;
+      top: 24px;
+      right: 24px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .toast {
+      padding: 14px 20px;
+      border-radius: 12px;
+      border: 1px solid;
+      font-size: 0.85rem;
+      font-weight: 500;
+      min-width: 280px;
+      max-width: 360px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: var(--shadow-lg);
+      animation: toastIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+
+    .toast.exit {
+      animation: toastOut 0.3s ease forwards;
+    }
+
+    @keyframes toastIn {
+      from {
+        opacity: 0;
+        transform: translateX(50px) scale(0.9);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+      }
+    }
+
+    @keyframes toastOut {
+      from {
+        opacity: 1;
+        transform: translateX(0);
+        max-height: 60px;
+      }
+
+      to {
+        opacity: 0;
+        transform: translateX(50px);
+        max-height: 0;
+        padding: 0;
+        margin: 0;
+      }
+    }
+
+    .toast-success {
+      background: rgba(5, 150, 105, 0.15);
+      border-color: rgba(5, 150, 105, 0.5);
+      color: #6ee7b7;
+    }
+
+    .toast-info {
+      background: rgba(0, 180, 216, 0.12);
+      border-color: rgba(0, 180, 216, 0.4);
+      color: var(--teal-light);
+    }
+
+    .toast-warn {
+      background: rgba(217, 119, 6, 0.15);
+      border-color: rgba(217, 119, 6, 0.5);
+      color: #fcd34d;
+    }
+
+    /* ===== EMPTY STATE ===== */
+    .empty-state {
+      text-align: center;
+      padding: 50px 20px;
+      color: var(--gray-600);
+    }
+
+    .empty-icon {
+      font-size: 2.5rem;
+      margin-bottom: 12px;
+      opacity: 0.5;
+    }
+
+    .empty-text {
+      font-size: 0.9rem;
+    }
+
+    /* ===== COUNTER ANIMATION ===== */
+    .stat-val {
+      transition: all 0.3s;
+    }
+
+    /* ===== SCROLLBAR ===== */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 3px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    /* ===== CONFIDENCE BAR ===== */
+    .conf-section {
+      margin: 14px 0 8px;
+    }
+
+    .conf-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.72rem;
+      color: var(--gray-400);
+      margin-bottom: 6px;
+    }
+
+    .conf-track {
+      height: 6px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .conf-fill {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 1.2s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    /* ===== DEMO PILLS ===== */
+    .demo-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+
+    .demo-pill {
+      padding: 5px 12px;
+      background: var(--glass);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      font-size: 0.72rem;
+      color: var(--gray-400);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .demo-pill:hover {
+      background: rgba(0, 180, 216, 0.1);
+      border-color: var(--teal);
+      color: var(--teal-light);
+    }
+
+    /* ===== SECTION LABEL ===== */
+    .section-label {
+      font-size: 0.7rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--teal);
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .no-results {
+      text-align: center;
+      padding: 32px;
+      color: var(--gray-600);
+      font-size: 0.85rem;
+    }
+
+    /* ===== PRINT / PDF ===== */
+    @media print {
+      .wave-bg, .shimmer-container, .toast-container, .analyze-btn,
+      .save-btn, .export-btn, .match-btn, .demo-pills, .tab-bar,
+      .search-input { display: none !important; }
+      body { background: #fff !important; color: #000 !important; }
+      .glass-card { border: 1px solid #ddd !important; box-shadow: none !important; background: #fff !important; }
+      .header { background: #0A1628 !important; position: static !important; }
+      .logo-title { -webkit-text-fill-color: #00B4D8 !important; }
+      td, th { color: #111 !important; }
+      .cat-chip { border: 1px solid #999 !important; }
+    }
+
+    /* responsive */
+    @media (max-width: 700px) {
+      .header-inner {
+        padding: 12px 16px;
+      }
+
+      .main {
+        padding: 16px;
+      }
+
+      .logo-title {
+        font-size: 1.3rem;
+      }
+
+      .header-stats {
+        gap: 6px;
+      }
+
+      .stat-pill {
+        padding: 6px 10px;
+        font-size: 0.7rem;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useRef, useCallback } = React;
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // CLASSIFICATION ENGINE
+    // ─────────────────────────────────────────────────────────────────────────────
+    const TONNAGE_SIGNALS = [
+      /\b(MV|M\/V|MT|mv|m\/v)\b\s+[A-Z]/i,
+      /\bDWT\b/i, /\bdead\s*weight\s*ton/i,
+      /\bopen\s+port\b/i, /\bopen\s+date\b/i, /\bopening\b/i,
+      /\bLOA\b/, /\bBEAM\b/i, /\bdraft\b/i,
+      /\bgrain\s+capacity\b/i, /\bbale\s+capacity\b/i,
+      /\bcranes?\b/i, /\bHOLD\b/i, /\bhatch(es)?\b/i,
+      /\bbulk\s*carrier\b/i, /\bhandysize\b/i, /\bhandymax\b/i, /\bsupramax\b/i, /\bultramax\b/i, /\bpanamax\b/i, /\bcapesize\b/i,
+      /\bspeed\b.*\bknot/i, /\bknot\b/i,
+      /\bIFO\b|\bMGO\b|\bconsumption\b/i,
+      /\bflag\b/i, /\bclass\b/i,
+      /\bGRT\b|\bNRT\b|\bNT\b/,
+      /\byear\s+built\b/i, /\bbuilt\s+in\b/i,
+      /\bP\s*&\s*I\b/i,
+      /\bowner(s)?\b/i,
+      /\bvessel\b/i,
+    ];
+
+    const VC_SIGNALS = [
+      /\bVoyage\s+Charter\b/i, /\bVC\b/, /\bVCT\b/,
+      /\blaycan\b/i, /\blayday\b/i, /\bcancelling\b/i,
+      /\bload\s+port\b/i, /\bdischarge\s+port\b/i,
+      /\bfreight\s+rate\b/i, /\bMTS\b|\bPMT\b/,
+      /\bFIOS\b|\bFIO\b|\bFO\b/,
+      /\bLIFO\b|\bLILO\b/i,
+      /\bPWWD\b|\bSHEX\b|\bSSHEX\b/i,
+      /\bcommission\b/i, /\b\d+(\.\d+)?\s*%\s*(comm(ission)?|add)\b/i,
+      /\burea\b/i, /\biron\s*ore\b/i, /\bcoal\b/i, /\bgrain\b/i, /\bwheat\b/i, /\bcorn\b/i,
+      /\bHRC\b/, /\bsteel\b/i, /\bcement\b/i, /\bfertili[sz]er\b/i,
+      /\bmolasses\b/i, /\bsugar\b/i, /\brice\b/i, /\bsoybeans?\b/i,
+      /\bphosphate\b/i, /\bbauxite\b/i, /\bfluorspar\b/i,
+      /\bcargo\b.*\bport\b/i, /→|->/, /\bto\b.*\bvia\b/i,
+      /\b\d{2},?\d{3}\s*(MT|mts|tons?)\b/i,
+      /\bvoyage\b/i,
+    ];
+
+    const TC_SIGNALS = [
+      /\bTime\s+Charter\b/i, /\bTCT\b/, /\bTCE\b/,
+      /\bdelivery\b/i, /\bredelivery\b/i,
+      /\bduration\b/i, /\bperiod\b/i,
+      /\b\d+\s*[-–]\s*\d+\s*(days?|months?)\b/i,
+      /\bWOG\b|\bWOGA\b/i,
+      /\baccount\s+of\b/i,
+      /\b1\s+TCT\b/i,
+      /\bECI\b|\bWCI\b|\bMed\b|\bGOA\b/i,
+      /\bSMX\b|\bUMX\b/i,
+      /\bsteels?\s*\/\s*gens?\b/i, /\bgens?\s*\/\s*steels?\b/i,
+      /\bgrains?\s+TCT\b/i,
+      /\bvia\s+GOA\b/i,
+      /\bredelivery\s+\w+/i,
+    ];
+
+    function scoreSignals(text, signals) {
+      return signals.reduce((s, rx) => s + (rx.test(text) ? 1 : 0), 0);
+    }
+
+    function classify(text) {
+      if (!text || text.trim().length < 20) return { cat: 'UNKNOWN', confidence: 0 };
+      const t = scoreSignals(text, TONNAGE_SIGNALS);
+      const v = scoreSignals(text, VC_SIGNALS);
+      const c = scoreSignals(text, TC_SIGNALS);
+      const total = t + v + c;
+      if (total === 0) return { cat: 'UNKNOWN', confidence: 0 };
+
+      // Disambiguate VC vs TC
+      let cat, rawScore;
+      if (c > v && c > t) { cat = 'CARGO_TC'; rawScore = c; }
+      else if (v > t) { cat = 'CARGO_VC'; rawScore = v; }
+      else { cat = 'TONNAGE'; rawScore = t; }
+
+      // Boost signals
+      if (cat === 'CARGO_TC' && /\bTCT\b/.test(text)) rawScore += 3;
+      if (cat === 'TONNAGE' && /\bDWT\b/i.test(text) && /\bopen\b/i.test(text)) rawScore += 2;
+      if (cat === 'CARGO_VC' && /\blaycan\b/i.test(text)) rawScore += 2;
+
+      const maxPossible = { TONNAGE: TONNAGE_SIGNALS.length, CARGO_VC: VC_SIGNALS.length, CARGO_TC: TC_SIGNALS.length };
+      const confidence = Math.min(98, Math.round((rawScore / maxPossible[cat]) * 100 * 2.5));
+      return { cat, confidence: Math.max(confidence, 50) };
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // DATA EXTRACTION ENGINE
+    // ─────────────────────────────────────────────────────────────────────────────
+    function extractFirst(text, patterns) {
+      for (const rx of patterns) {
+        const m = text.match(rx);
+        if (m) return (m[1] || m[0]).trim();
+      }
+      return null;
+    }
+
+    function extractTonnage(text) {
+      return {
+        vesselName: extractFirst(text, [
+          /\b(MV|M\/V)\s+([A-Z][A-Z\s]+?)(?:\s*[-–,\n]|\s{2,})/i,
+          /vessel[\s:]+([A-Z][A-Z\s]+?)(?:\s*[-–,\n]|\s{2,})/i,
+          /name[\s:]+([A-Z][A-Z\s]+?)(?:\s*[-–,\n]|\s{2,})/i,
+        ]) || extractFirst(text, [/\b(MV|M\/V)\s+(\S+(?:\s+\S+){0,3})/i]),
+        ownerName: extractFirst(text, [
+          /owner[s]?[\s:]+([A-Za-z\s&.]+?)(?:\n|,|–|-)/i,
+          /account[\s:]+([A-Za-z\s&.]+?)(?:\n|,)/i,
+          /c\/o[\s:]+([A-Za-z\s&.]+?)(?:\n|,)/i,
+        ]),
+        openPort: extractFirst(text, [
+          /open\s+(?:at\s+|in\s+)?([A-Za-z\s,]+?)(?:\s*[,\-–\n]|open\s+date)/i,
+          /position[\s:]+([A-Za-z\s,]+?)(?:\n|,)/i,
+        ]),
+        openDate: extractFirst(text, [
+          /open\s+date[\s:]+([^\n,]+)/i,
+          /open(?:ing)?[\s:]+[A-Za-z\s,]+?(\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s*\d{0,4})/i,
+          /(\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s*(?:20\d{2})?)/i,
+          /(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})/,
+        ]),
+        vesselType: extractFirst(text, [
+          /\b(Bulk\s*Carrier|Handysize|Handymax|Supramax|Ultramax|Panamax|Capesize|General\s*Cargo|MPP|OHBC)\b/i,
+        ]) || 'Bulk Carrier',
+        vesselSize: extractFirst(text, [
+          /(\d[\d,]+)\s*DWT/i,
+          /DWT[\s:]+(\d[\d,]+)/i,
+        ]),
+      };
+    }
+
+    function extractCargoVC(text) {
+      return {
+        accountName: extractFirst(text, [
+          /account[\s:]+([A-Za-z\s&.]+?)(?:\n|,)/i,
+          /charterer[\s:]+([A-Za-z\s&.]+?)(?:\n|,)/i,
+        ]),
+        cargoName: extractFirst(text, [
+          /cargo[\s:]+([A-Za-z\s\/]+?)(?:\n|,|\d)/i,
+          /(\d[\d,]+\s+MT\s+)([A-Za-z\s]+?)(?:\n|,|\d)/i,
+          /\b(MOLASSES|UREA|HRC|COAL|GRAIN|WHEAT|CORN|IRON\s*ORE|STEEL|CEMENT|SUGAR|RICE|FERTILIZER|PHOSPHATE|BAUXITE)\b/i,
+        ]),
+        loadPort: extractFirst(text, [
+          /load(?:ing)?\s+port[\s:]+([A-Za-z\s,()]+?)(?:\n|→|->|disch|to\b)/i,
+          /from[\s:]+([A-Za-z\s,()]+?)(?:\s+to\s+|\s*→\s*)/i,
+        ]),
+        dischargePort: extractFirst(text, [
+          /disch(?:arge)?\s+port[\s:]+([A-Za-z\s,()]+?)(?:\n|,|laycan)/i,
+          /(?:→|->)\s*([A-Za-z\s,+()]+?)(?:\n|,|laycan)/i,
+          /to[\s:]+([A-Za-z\s,+()]+?)(?:\n|laycan|,)/i,
+        ]),
+        laycan: extractFirst(text, [
+          /laycan[\s:]+([^\n]+)/i,
+          /layday[\s:]+([^\n]+)/i,
+          /((?:early|mid|late)\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s*\d{0,4})/i,
+          /(\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s*[-–]\s*\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s*\d{0,4})/i,
+        ]),
+        cargoType: extractFirst(text, [
+          /\b(bulk|liquid|container|breakbulk|RoRo|dry)\b/i,
+        ]) || 'Bulk',
+      };
+    }
+
+    function extractCargoTC(text) {
+      return {
+        accountName: extractFirst(text, [
+          /account[\s:]+([A-Za-z\s&.]+?)(?:\n|,)/i,
+          /for\s+account\s+of[\s:]+([A-Za-z\s&.]+?)(?:\n|,)/i,
+        ]),
+        cargoName: extractFirst(text, [
+          /\b(Grains?|Steels?(?:\s*\/\s*Gens?)?|Gens?(?:\s*\/\s*Steels?)?|Coal|Fertilizers?|Cement|Sugar)\b/i,
+          /cargo[\s:]+([A-Za-z\s\/]+?)(?:\n|,|\d)/i,
+        ]),
+        deliveryPort: extractFirst(text, [
+          /delivery[\s:]+([A-Za-z\s,()]+?)(?:\n|,|redelivery)/i,
+          /dely[\s:]+([A-Za-z\s,()]+?)(?:\n|,|redely)/i,
+        ]),
+        redeliveryPort: extractFirst(text, [
+          /redelivery[\s:]+([A-Za-z\s,()]+?)(?:\n|,|via|duration)/i,
+          /redely[\s:]+([A-Za-z\s,()]+?)(?:\n|,|via)/i,
+        ]),
+        duration: extractFirst(text, [
+          /duration[\s:]+([^\n]+)/i,
+          /period[\s:]+([^\n]+)/i,
+          /(\d+\s*[-–]\s*\d+\s*days?)/i,
+          /(\d+\s*[-–]\s*\d+\s*months?)/i,
+        ]),
+        laycan: extractFirst(text, [
+          /laycan[\s:]+([^\n]+)/i,
+          /(\d{1,2}\s*[-–]\s*\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s*\d{0,4})/i,
+        ]),
+        cargoType: extractFirst(text, [
+          /\b(bulk|liquid|dry|breakbulk|general\s*cargo)\b/i,
+        ]) || 'Dry',
+      };
+    }
+
+    function extractData(text, cat) {
+      switch (cat) {
+        case 'TONNAGE': return extractTonnage(text);
+        case 'CARGO_VC': return extractCargoVC(text);
+        case 'CARGO_TC': return extractCargoTC(text);
+        default: return {};
+      }
+    }
+
+    function getFieldDefs(cat) {
+      switch (cat) {
+        case 'TONNAGE': return [
+          { key: 'vesselName', label: 'Vessel Name' },
+          { key: 'ownerName', label: 'Owner / Account' },
+          { key: 'openPort', label: 'Open Port' },
+          { key: 'openDate', label: 'Open Date' },
+          { key: 'vesselType', label: 'Vessel Type' },
+          { key: 'vesselSize', label: 'Vessel Size (DWT)' },
+        ];
+        case 'CARGO_VC': return [
+          { key: 'accountName', label: 'Account Name' },
+          { key: 'cargoName', label: 'Cargo Name' },
+          { key: 'loadPort', label: 'Loading Port' },
+          { key: 'dischargePort', label: 'Discharge Port' },
+          { key: 'laycan', label: 'Laycan' },
+          { key: 'cargoType', label: 'Cargo Type' },
+        ];
+        case 'CARGO_TC': return [
+          { key: 'accountName', label: 'Account Name' },
+          { key: 'cargoName', label: 'Cargo Name' },
+          { key: 'deliveryPort', label: 'Delivery Port' },
+          { key: 'redeliveryPort', label: 'Redelivery Port' },
+          { key: 'duration', label: 'Duration' },
+          { key: 'laycan', label: 'Laycan' },
+          { key: 'cargoType', label: 'Cargo Type' },
+        ];
+        default: return [];
+      }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // DEMO DATA
+    // ─────────────────────────────────────────────────────────────────────────────
+    const DEMO_EMAILS = [
+      {
+        label: 'Tonnage – Sheng An Hai',
+        text: `Vessel: MV SHENG AN HAI
+Type: Bulk Carrier (Handysize)
+DWT: 56,564 MT
+LOA: 189.99m / BEAM: 32.26m / Draft: 10.8m
+Built: 2012
+Flag: Hong Kong
+Class: DNV GL
+GRT: 31,742 / NRT: 17,894
+Grain: 71,240 m³ / Bale: 69,220 m³
+Cranes: 4 x 30t
+Speed/Consumption: 13.5 kts / IFO 28mt, MGO 2mt
+Open Port: Xiamen, China
+Open Date: 2 June 2026
+Owner: Sino Pacific Carriers Ltd
+P&I: Gard`
+      },
+      {
+        label: 'Tonnage – Blue Star',
+        text: `Good day,
+
+Please find below vessel details:
+Vessel Name: MV BLUE STAR
+DWT: 37,947 MT
+Vessel Type: Handymax Bulk Carrier
+Year Built: 2009
+Flag: Panama
+LOA: 179.90m BEAM: 30m Draft: 9.5m
+Grain capacity: 48,100 cbm, Bale: 46,700 cbm
+Holds/Hatches: 5/5
+Cranes: 4 x 25mt
+Speed: 13 knots / Consumption: IFO 22mt
+Class: Bureau Veritas
+Open in Gabes, Tunisia
+Open Date: 25 May 2026
+Owner/Account: Mediterranean Bulk Carriers
+
+Regards`
+      },
+      {
+        label: 'Cargo VC – Molasses',
+        text: `Cargo: 15,000–20,000 MT MOLASSES
+Loading Port: Koh Si Chang, Thailand
+Discharge Port: Kandla + Chennai, India
+Laycan: Mid July 2026
+Freight Rate: USD 28 PMT FIOS
+Commission: 3.75% total (1.25% address + 2.5% brokerage)
+Charterer: Thai Molasses Trading Co.
+Cargo Type: Bulk Liquid
+PWWD – SHEX EIU
+P.O.B: TBN`
+      },
+      {
+        label: 'Cargo VC – HRC Steel',
+        text: `Shipment Enquiry – HRC Steel Coils
+
+Account: Saudi Steel International
+Cargo: 20,000 MT Hot Rolled Coils (HRC)
+Load Port: Jeddah, Saudi Arabia
+Discharge Port: Bilbao, Spain
+Laycan: 25 June – 05 July 2026
+Freight Rate: USD 45 PMT FIOS
+Commission: 2.5% total
+Cargo Type: Breakbulk / Steel
+
+Additional notes:
+- Vessel to be Supramax or above
+- Stowage factor 1.2 cbm/mt
+- Max draft at Bilbao: 9.5m`
+      },
+      {
+        label: 'Cargo TC – Grains (Vancouver)',
+        text: `1 TCT – Grains
+Account: Pacific Grain Traders
+Delivery: Vancouver, BC, Canada
+Redelivery: Chittagong, Bangladesh
+Duration: 10–17 days WOG
+Laycan: 10–15 June 2026
+Vessel Size: 55,000–60,000 DWT Supramax/Ultramax
+TCE Rate: Approx USD 18,000/day
+Commission: 3.75% total
+Cargo: Bulk Grains (Wheat/Canola)
+Cargo Type: Bulk / Dry`
+      },
+      {
+        label: 'Cargo TC – Steels/Gens (ECI→Med)',
+        text: `1 TCT – Steels/Gens
+Account: EastMed Cargo Solutions Pte Ltd
+Delivery: ECI (East Coast India)
+Redelivery: Mediterranean via GOA
+Duration: 15–18 days WOG
+Laycan: 15–18 July 2026
+Size Required: 30,000–40,000 DWT (Handymax SMX)
+Estimated TCE: USD 16,500 per day
+Commission: 5% total addcom
+Cargo Type: General Cargo / Steel Products`
+      },
+    ];
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // PRE-LOADED DATABASE RECORDS
+    // ─────────────────────────────────────────────────────────────────────────────
+    let ID_COUNTER = 100;
+    function makeId() { return ++ID_COUNTER; }
+
+    function buildRecord(email) {
+      const { cat, confidence } = classify(email.text);
+      const fields = extractData(email.text, cat);
+      return {
+        id: makeId(),
+        cat,
+        confidence,
+        fields,
+        rawEmail: email.text,
+        timestamp: new Date(Date.now() - Math.random() * 3600000 * 8).toISOString(),
+        expanded: false,
+        matched: false,
+      };
+    }
+
+    const INITIAL_RECORDS = DEMO_EMAILS.map(e => buildRecord(e));
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // HELPERS
+    // ─────────────────────────────────────────────────────────────────────────────
+    function catLabel(cat) {
+      return { TONNAGE: 'TONNAGE', CARGO_VC: 'CARGO VC', CARGO_TC: 'CARGO TC', UNKNOWN: 'UNKNOWN' }[cat] || cat;
+    }
+    function catColor(cat) {
+      return { TONNAGE: '#2563EB', CARGO_VC: '#059669', CARGO_TC: '#D97706', UNKNOWN: '#64748b' }[cat] || '#64748b';
+    }
+    function catChipClass(cat) {
+      return { TONNAGE: 'chip-tonnage', CARGO_VC: 'chip-vc', CARGO_TC: 'chip-tc', UNKNOWN: 'chip-unknown' }[cat] || 'chip-unknown';
+    }
+    function catRowClass(cat) {
+      return { TONNAGE: 'tonnage-row', CARGO_VC: 'vc-row', CARGO_TC: 'tc-row' }[cat] || '';
+    }
+    function catIcon(cat) {
+      return { TONNAGE: '🚢', CARGO_VC: '📦', CARGO_TC: '⏱️', UNKNOWN: '❓' }[cat] || '❓';
+    }
+    function badgeClass(cat) {
+      return { TONNAGE: 'badge-tonnage', CARGO_VC: 'badge-vc', CARGO_TC: 'badge-tc', UNKNOWN: 'badge-unknown' }[cat] || 'badge-unknown';
+    }
+
+    function fmtTime(iso) {
+      const d = new Date(iso);
+      return d.toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+    }
+
+    function getKeyField(rec) {
+      const f = rec.fields;
+      switch (rec.cat) {
+        case 'TONNAGE': return f.vesselName || '—';
+        case 'CARGO_VC': return f.cargoName || '—';
+        case 'CARGO_TC': return f.cargoName || '—';
+        default: return '—';
+      }
+    }
+    function getSecondField(rec) {
+      const f = rec.fields;
+      switch (rec.cat) {
+        case 'TONNAGE': return f.openPort ? `Open: ${f.openPort}` : '—';
+        case 'CARGO_VC': return f.loadPort ? `${f.loadPort} → ${f.dischargePort || '?'}` : '—';
+        case 'CARGO_TC': return f.deliveryPort ? `Del: ${f.deliveryPort}` : '—';
+        default: return '—';
+      }
+    }
+    function getThirdField(rec) {
+      const f = rec.fields;
+      switch (rec.cat) {
+        case 'TONNAGE': return f.openDate || f.vesselSize ? `${f.vesselSize || ''}t / ${f.openDate || ''}` : '—';
+        case 'CARGO_VC': return f.laycan || '—';
+        case 'CARGO_TC': return f.duration || f.laycan || '—';
+        default: return '—';
+      }
+    }
+
+    function highlightText(text, query) {
+      if (!query) return text;
+      const parts = text.split(new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi'));
+      return parts.map((p, i) =>
+        p.toLowerCase() === query.toLowerCase()
+          ? <mark key={i}>{p}</mark>
+          : p
+      );
+    }
+
+    function toCSV(records) {
+      const headers = ['ID', 'Category', 'Confidence', 'KeyField', 'Details', 'Timestamp'];
+      const rows = records.map(r => [
+        r.id, catLabel(r.cat), r.confidence + '%',
+        getKeyField(r), getSecondField(r), fmtTime(r.timestamp)
+      ]);
+      return [headers, ...rows].map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // PARTICLES
+    // ─────────────────────────────────────────────────────────────────────────────
+    function Particles() {
+      const particles = Array.from({ length: 18 }, (_, i) => ({
+        id: i,
+        left: Math.random() * 100,
+        size: 2 + Math.random() * 3,
+        duration: 8 + Math.random() * 12,
+        delay: Math.random() * 10,
+        color: Math.random() > 0.5 ? '#00B4D8' : '#F4A261',
+      }));
+      return (
+        <div className="shimmer-container">
+          {particles.map(p => (
+            <div key={p.id} className="particle" style={{
+              left: `${p.left}%`,
+              width: p.size, height: p.size,
+              background: p.color,
+              animationDuration: `${p.duration}s`,
+              animationDelay: `${p.delay}s`,
+            }} />
+          ))}
+        </div>
+      );
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // TOAST SYSTEM
+    // ─────────────────────────────────────────────────────────────────────────────
+    function ToastContainer({ toasts, onRemove }) {
+      return (
+        <div className="toast-container">
+          {toasts.map(t => (
+            <div key={t.id} className={`toast toast-${t.type}`} onClick={() => onRemove(t.id)}>
+              <span>{t.icon}</span>
+              <span>{t.msg}</span>
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // ANIMATED COUNTER
+    // ─────────────────────────────────────────────────────────────────────────────
+    function AnimCounter({ value }) {
+      const [disp, setDisp] = useState(value);
+      const prev = useRef(value);
+      useEffect(() => {
+        if (value === prev.current) return;
+        const diff = value - prev.current;
+        const steps = Math.abs(diff);
+        let step = 0;
+        const interval = setInterval(() => {
+          step++;
+          setDisp(prev.current + Math.round((diff * step) / steps));
+          if (step >= steps) { clearInterval(interval); prev.current = value; }
+        }, 40);
+        return () => clearInterval(interval);
+      }, [value]);
+      return <span className="stat-val">{disp}</span>;
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // MAIN APP
+    // ─────────────────────────────────────────────────────────────────────────────
+    function App() {
+      const [records, setRecords] = useState(INITIAL_RECORDS);
+      const [emailText, setEmailText] = useState('');
+      const [processing, setProcessing] = useState(false);
+      const [result, setResult] = useState(null); // { cat, confidence, fields }
+      const [saved, setSaved] = useState(false);
+      const [activeTab, setActiveTab] = useState('ALL');
+      const [searchQ, setSearchQ] = useState('');
+      const [dateFilter, setDateFilter] = useState('ALL');
+      const [expandedId, setExpandedId] = useState(null);
+      const [matchedIds, setMatchedIds] = useState(new Set());
+      const [toasts, setToasts] = useState([]);
+      const toastId = useRef(0);
+
+      const addToast = useCallback((msg, type = 'success', icon = '✓') => {
+        const id = ++toastId.current;
+        setToasts(p => [...p, { id, msg, type, icon }]);
+        setTimeout(() => setToasts(p => p.filter(t => t.id !== id)), 3500);
+      }, []);
+
+      const removeToast = useCallback((id) => setToasts(p => p.filter(t => t.id !== id)), []);
+
+      // Analyze
+      const analyze = () => {
+        if (!emailText.trim() || processing) return;
+        setProcessing(true);
+        setResult(null);
+        setSaved(false);
+        setTimeout(() => {
+          const { cat, confidence } = classify(emailText);
+          const fields = extractData(emailText, cat);
+          setResult({ cat, confidence, fields });
+          setProcessing(false);
+        }, 900 + Math.random() * 400);
+      };
+
+      // Ripple
+      const handleBtnClick = (e) => {
+        const btn = e.currentTarget;
+        const r = document.createElement('span');
+        r.className = 'btn-ripple';
+        const rect = btn.getBoundingClientRect();
+        r.style.left = (e.clientX - rect.left) + 'px';
+        r.style.top = (e.clientY - rect.top) + 'px';
+        btn.appendChild(r);
+        setTimeout(() => r.remove(), 700);
+        analyze();
+      };
+
+      // Save
+      const save = () => {
+        if (!result || saved) return;
+        const rec = {
+          id: makeId(),
+          cat: result.cat,
+          confidence: result.confidence,
+          fields: result.fields,
+          rawEmail: emailText,
+          timestamp: new Date().toISOString(),
+          expanded: false,
+          matched: false,
+        };
+        setRecords(p => [rec, ...p]);
+        setSaved(true);
+        addToast('Record saved to database successfully!', 'success', '✓');
+      };
+
+      // Demo load
+      const loadDemo = (text) => {
+        setEmailText(text);
+        setResult(null);
+        setSaved(false);
+      };
+
+      // Match opportunities for Tonnage row
+      const handleMatch = (id) => {
+        const rec = records.find(r => r.id === id);
+        if (!rec || rec.cat !== 'TONNAGE') return;
+        const matches = new Set();
+        matches.add(id);
+        records.forEach(r => {
+          if (r.cat === 'CARGO_VC' || r.cat === 'CARGO_TC') matches.add(r.id);
+        });
+        setMatchedIds(matches);
+        setActiveTab('ALL');
+        addToast('Matching cargo opportunities highlighted!', 'info', '🔗');
+        setTimeout(() => setMatchedIds(new Set()), 4000);
+      };
+
+      // Filter
+      const filtered = records.filter(r => {
+        const tabOk = activeTab === 'ALL' || r.cat === activeTab;
+        if (!tabOk) return false;
+        // Date filter
+        if (dateFilter !== 'ALL') {
+          const ts = new Date(r.timestamp);
+          const now = new Date();
+          const diffMs = now - ts;
+          const diffDays = diffMs / (1000 * 60 * 60 * 24);
+          if (dateFilter === 'TODAY' && diffDays > 1) return false;
+          if (dateFilter === '7D' && diffDays > 7) return false;
+          if (dateFilter === '30D' && diffDays > 30) return false;
+        }
+        if (!searchQ) return true;
+        const q = searchQ.toLowerCase();
+        const txt = [
+          catLabel(r.cat), getKeyField(r), getSecondField(r), getThirdField(r),
+          r.timestamp, ...Object.values(r.fields).filter(Boolean)
+        ].join(' ').toLowerCase();
+        return txt.includes(q);
+      });
+
+      // Print / PDF
+      const handlePrint = () => {
+        addToast('Opening print dialog… (Save as PDF)', 'info', '🖨');
+        setTimeout(() => window.print(), 400);
+      };
+
+      // Export
+      const exportJSON = () => {
+        const blob = new Blob([JSON.stringify(filtered, null, 2)], { type: 'application/json' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'shipmail_records.json';
+        a.click();
+        addToast('JSON exported successfully!', 'success', '⬇');
+      };
+      const exportCSV = () => {
+        const blob = new Blob([toCSV(filtered)], { type: 'text/csv' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'shipmail_records.csv';
+        a.click();
+        addToast('CSV exported successfully!', 'success', '⬇');
+      };
+
+      // Stats
+      const total = records.length;
+      const cTon = records.filter(r => r.cat === 'TONNAGE').length;
+      const cVC = records.filter(r => r.cat === 'CARGO_VC').length;
+      const cTC = records.filter(r => r.cat === 'CARGO_TC').length;
+
+      const fieldDefs = result ? getFieldDefs(result.cat) : [];
+
+      return (
+        <div className="app">
+          <div className="wave-bg" />
+          <Particles />
+          <ToastContainer toasts={toasts} onRemove={removeToast} />
+
+          {/* ── HEADER ── */}
+          <header className="header">
+            <div className="header-inner">
+              <div className="logo-group">
+                <div className="logo-icon">🚢</div>
+                <div className="logo-text">
+                  <div className="logo-title">ShipMail AI</div>
+                  <div className="logo-sub">Shipping Email Intelligence Platform · IME</div>
+                </div>
+              </div>
+              <div className="header-stats">
+                <div className="stat-pill">
+                  <span className="stat-dot" style={{ background: '#60a5fa' }} />
+                  <AnimCounter value={total} /> <span style={{ color: '#94a3b8', fontSize: '0.75rem' }}>Total</span>
+                </div>
+                <div className="stat-pill">
+                  <span className="stat-dot" style={{ background: '#2563EB' }} />
+                  <AnimCounter value={cTon} /> <span style={{ color: '#94a3b8', fontSize: '0.75rem' }}>Tonnage</span>
+                </div>
+                <div className="stat-pill">
+                  <span className="stat-dot" style={{ background: '#059669' }} />
+                  <AnimCounter value={cVC} /> <span style={{ color: '#94a3b8', fontSize: '0.75rem' }}>Cargo VC</span>
+                </div>
+                <div className="stat-pill">
+                  <span className="stat-dot" style={{ background: '#D97706' }} />
+                  <AnimCounter value={cTC} /> <span style={{ color: '#94a3b8', fontSize: '0.75rem' }}>Cargo TC</span>
+                </div>
+              </div>
+            </div>
+          </header>
+
+          {/* ── MAIN ── */}
+          <main className="main">
+            <div className="panels-grid">
+
+              {/* ── LEFT: INPUT PANEL ── */}
+              <div className="glass-card">
+                <div className="card-header">
+                  <div className="card-icon" style={{ background: 'rgba(0,180,216,0.15)' }}>📧</div>
+                  <div>
+                    <div className="card-title">Email Input</div>
+                    <div className="card-sub">Paste a raw shipping email to classify & extract</div>
+                  </div>
+                </div>
+                <div className="input-panel">
+                  <div className="section-label" style={{ marginBottom: '8px' }}>Quick Demo Emails</div>
+                  <div className="demo-pills">
+                    {DEMO_EMAILS.map((e, i) => (
+                      <div key={i} className="demo-pill" onClick={() => loadDemo(e.text)}>{e.label}</div>
+                    ))}
+                  </div>
+                  <div className="textarea-wrapper">
+                    <textarea
+                      className="email-textarea"
+                      value={emailText}
+                      onChange={e => { setEmailText(e.target.value); setResult(null); setSaved(false); }}
+                      placeholder={`Paste shipping email here…\n\nExample:\n  MV SHENG AN HAI — DWT 56564\n  Open Xiamen, China — 2 June 2026\n  Owner: Sino Pacific Carriers`}
+                    />
+                    <div className="char-count">{emailText.length} chars</div>
+                  </div>
+
+                  <button
+                    className="analyze-btn"
+                    onClick={handleBtnClick}
+                    disabled={!emailText.trim() || processing}
+                  >
+                    {processing ? '⚙ Analyzing…' : '⚡ Analyze Email'}
+                  </button>
+
+                  {/* Processing animation */}
+                  {processing && (
+                    <div className="processing-state">
+                      <div className="radar-ring" />
+                      <div className="processing-text">Running classification engine…</div>
+                    </div>
+                  )}
+
+                  {/* Result badge */}
+                  {result && !processing && (
+                    <div className={`result-badge ${badgeClass(result.cat)}`}>
+                      <span style={{ fontSize: '1.4rem' }}>{catIcon(result.cat)}</span>
+                      <div style={{ flex: 1 }}>
+                        <div className="badge-label" style={{ color: catColor(result.cat) }}>
+                          {catLabel(result.cat)}
+                        </div>
+                        <div style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: '2px' }}>
+                          Classification result
+                        </div>
+                        <div className="conf-section">
+                          <div className="conf-label">
+                            <span>Confidence</span>
+                            <span style={{ color: catColor(result.cat), fontWeight: 600 }}>{result.confidence}%</span>
+                          </div>
+                          <div className="conf-track">
+                            <div className="conf-fill" style={{
+                              width: result.confidence + '%',
+                              background: `linear-gradient(90deg, ${catColor(result.cat)}aa, ${catColor(result.cat)})`
+                            }} />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* ── RIGHT: EXTRACTION PANEL ── */}
+              <div className="glass-card">
+                <div className="card-header">
+                  <div className="card-icon" style={{ background: 'rgba(244,162,97,0.15)' }}>🧠</div>
+                  <div>
+                    <div className="card-title">Extracted Data</div>
+                    <div className="card-sub">Structured fields parsed from the email</div>
+                  </div>
+                </div>
+                <div className="extraction-panel">
+                  {processing && (
+                    <div>
+                      {[1, 2, 3, 4, 5, 6].map(i => (
+                        <div key={i} className="skeleton" style={{ width: `${60 + Math.random() * 40}%`, animationDelay: `${i * 0.1}s` }} />
+                      ))}
+                    </div>
+                  )}
+
+                  {!processing && !result && (
+                    <div className="empty-state">
+                      <div className="empty-icon">⚓</div>
+                      <div className="empty-text">Paste an email and click <strong>Analyze</strong> to extract shipping data</div>
+                      <div style={{ marginTop: '12px', fontSize: '0.75rem', color: '#475569' }}>
+                        Supports: Tonnage, Cargo VC, Cargo TC
+                      </div>
+                    </div>
+                  )}
+
+                  {!processing && result && (
+                    <>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
+                        <span className={`cat-chip ${catChipClass(result.cat)}`}>
+                          {catIcon(result.cat)} {catLabel(result.cat)}
+                        </span>
+                        <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                          {result.confidence}% confidence
+                        </span>
+                      </div>
+
+                      <div className="extracted-card">
+                        {fieldDefs.length === 0 ? (
+                          <div style={{ color: '#64748b', fontSize: '0.85rem' }}>No structured fields available for this category.</div>
+                        ) : fieldDefs.map((fd, i) => (
+                          <div key={fd.key} className="field-row" style={{ animationDelay: `${i * 0.07}s` }}>
+                            <div className="field-key">{fd.label}</div>
+                            <div className={`field-val ${!result.fields[fd.key] ? 'empty' : ''}`}>
+                              {result.fields[fd.key] || 'Not found'}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      <button className="save-btn" onClick={save} disabled={saved}>
+                        {saved ? '✓ Saved to Database' : '💾 Save to Database'}
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* ── DATABASE TABLE ── */}
+            <div className="glass-card db-section">
+              <div className="card-header">
+                <div className="card-icon" style={{ background: 'rgba(0,180,216,0.12)' }}>🗄️</div>
+                <div style={{ flex: 1 }}>
+                  <div className="card-title">Intelligence Database</div>
+                  <div className="card-sub">{records.length} records · Live searchable · Exportable</div>
+                </div>
+              </div>
+
+              <div className="db-toolbar">
+                <div className="tab-bar">
+                  {['ALL', 'TONNAGE', 'CARGO_VC', 'CARGO_TC'].map(t => (
+                    <button
+                      key={t}
+                      className={`tab-btn ${activeTab === t ? 'active' : ''}`}
+                      onClick={() => setActiveTab(t)}
+                    >
+                      {t === 'ALL' ? '🌐 All' : t === 'TONNAGE' ? '🚢 Tonnage' : t === 'CARGO_VC' ? '📦 Cargo VC' : '⏱ Cargo TC'}
+                      <span style={{
+                        marginLeft: '6px', fontSize: '0.68rem', opacity: 0.7,
+                        background: 'rgba(255,255,255,0.08)', padding: '1px 6px', borderRadius: '10px'
+                      }}>
+                        {t === 'ALL' ? records.length : records.filter(r => r.cat === t).length}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+                <input
+                  className="search-input"
+                  placeholder="🔍  Search records…"
+                  value={searchQ}
+                  onChange={e => setSearchQ(e.target.value)}
+                />
+                <select
+                  className="search-input"
+                  value={dateFilter}
+                  onChange={e => setDateFilter(e.target.value)}
+                  style={{flex:'none',width:'auto',paddingRight:'28px',cursor:'pointer'}}
+                >
+                  <option value="ALL">📅 All Time</option>
+                  <option value="TODAY">Today</option>
+                  <option value="7D">Last 7 Days</option>
+                  <option value="30D">Last 30 Days</option>
+                </select>
+                <button className="export-btn" onClick={exportJSON}>⬇ JSON</button>
+                <button className="export-btn" onClick={exportCSV}>⬇ CSV</button>
+                <button className="export-btn" onClick={handlePrint} style={{background:'rgba(244,162,97,0.08)',borderColor:'rgba(244,162,97,0.35)',color:'#FFB380'}}>🖨 Print / PDF</button>
+              </div>
+
+              <div className="db-table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Category</th>
+                      <th>Key Field</th>
+                      <th>Details</th>
+                      <th>Date / Period</th>
+                      <th>Conf.</th>
+                      <th>Saved At</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filtered.length === 0 ? (
+                      <tr><td colSpan="8"><div className="no-results">No records match your search.</div></td></tr>
+                    ) : filtered.map(rec => (
+                      <React.Fragment key={rec.id}>
+                        <tr
+                          className={`${catRowClass(rec.cat)} ${matchedIds.has(rec.id) ? 'matched' : ''}`}
+                          onClick={() => setExpandedId(expandedId === rec.id ? null : rec.id)}
+                        >
+                          <td style={{ color: '#475569', fontSize: '0.75rem' }}>#{rec.id}</td>
+                          <td>
+                            <span className={`cat-chip ${catChipClass(rec.cat)}`}>
+                              {catIcon(rec.cat)} {catLabel(rec.cat)}
+                            </span>
+                          </td>
+                          <td style={{ fontWeight: 600, color: '#f1f5f9', maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            <span className="highlight">{searchQ ? highlightText(getKeyField(rec), searchQ) : getKeyField(rec)}</span>
+                          </td>
+                          <td style={{ maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {searchQ ? highlightText(getSecondField(rec), searchQ) : getSecondField(rec)}
+                          </td>
+                          <td>{searchQ ? highlightText(getThirdField(rec), searchQ) : getThirdField(rec)}</td>
+                          <td>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              <div style={{
+                                width: '40px', height: '4px', background: 'rgba(255,255,255,0.08)',
+                                borderRadius: '2px', overflow: 'hidden'
+                              }}>
+                                <div style={{
+                                  height: '100%', borderRadius: '2px',
+                                  width: rec.confidence + '%',
+                                  background: catColor(rec.cat)
+                                }} />
+                              </div>
+                              <span style={{ fontSize: '0.75rem', color: catColor(rec.cat), fontWeight: 600 }}>{rec.confidence}%</span>
+                            </div>
+                          </td>
+                          <td style={{ fontSize: '0.75rem', color: '#475569', whiteSpace: 'nowrap' }}>{fmtTime(rec.timestamp)}</td>
+                          <td>
+                            <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                              {rec.cat === 'TONNAGE' && (
+                                <button className="match-btn" onClick={e => { e.stopPropagation(); handleMatch(rec.id); }}>
+                                  🔗 Match
+                                </button>
+                              )}
+                              <span style={{
+                                fontSize: '0.85rem', color: '#475569', transition: 'transform 0.2s',
+                                transform: expandedId === rec.id ? 'rotate(90deg)' : 'rotate(0deg)'
+                              }}>›</span>
+                            </div>
+                          </td>
+                        </tr>
+                        {expandedId === rec.id && (
+                          <tr className="expand-row">
+                            <td colSpan="8">
+                              <div className="section-label" style={{ marginBottom: '10px' }}>Full Extracted Fields</div>
+                              <div className="expanded-fields">
+                                {Object.entries(rec.fields).map(([k, v]) => (
+                                  <div key={k} className="exp-field">
+                                    <div className="exp-key">{k.replace(/([A-Z])/g, ' $1').trim()}</div>
+                                    <div className="exp-val">{v || <span style={{ color: '#475569', fontStyle: 'italic' }}>Not extracted</span>}</div>
+                                  </div>
+                                ))}
+                              </div>
+                              <div style={{ marginTop: '14px', padding: '12px', background: 'rgba(0,0,0,0.25)', borderRadius: '8px' }}>
+                                <div className="section-label" style={{ marginBottom: '6px' }}>Raw Email Preview</div>
+                                <pre style={{
+                                  fontSize: '0.75rem', lineHeight: '1.6', color: '#94a3b8',
+                                  whiteSpace: 'pre-wrap', wordBreak: 'break-word', maxHeight: '160px',
+                                  overflow: 'auto', margin: 0
+                                }}>{rec.rawEmail}</pre>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </React.Fragment>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </main>
+
+          {/* ── FOOTER ── */}
+          <footer style={{
+            textAlign: 'center', padding: '20px 32px', borderTop: '1px solid rgba(255,255,255,0.05)',
+            fontFamily: 'Space Grotesk,sans-serif', display: 'flex', flexWrap: 'wrap',
+            alignItems: 'center', justifyContent: 'center', gap: '6px'
+          }}>
+            <span style={{ color: '#2d4a6a', fontSize: '0.75rem', letterSpacing: '0.5px' }}>ShipMail AI · IME Shipping Email Intelligence Platform · Live Evaluation 4 June 2026</span>
+            <span style={{ margin: '0 8px', opacity: 0.3, color: '#2d4a6a' }}>|</span>
+            <span style={{ color: '#0096C7', fontSize: '0.75rem' }}>Rule-Based NLP Engine · Zero External API Dependencies</span>
+            <span style={{ margin: '0 8px', opacity: 0.3, color: '#2d4a6a' }}>|</span>
+            <span style={{ fontSize: '0.75rem' }}>
+              Developed by <span style={{
+                background: 'linear-gradient(90deg, #00B4D8, #F4A261)',
+                WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+                fontWeight: 700, letterSpacing: '0.3px'
+              }}>Sanchi Sisodia</span>
+            </span>
+          </footer>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+
+</html>
