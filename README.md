@@ -48,7 +48,7 @@ ShipMail AI is a **production-grade, single-file web application** built for the
 
 ## 🔗 Live Demo
 
-**👉 [https://sanchi1905.github.io/ShipMail_AI/](https://shipmail-ai.netlify.app/)**
+**👉 (https://shipmail-ai.netlify.app/)**
 
 Or run locally by simply opening `index.html` in any modern browser — no server or build step required.
 
