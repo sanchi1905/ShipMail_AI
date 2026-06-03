@@ -1755,15 +1755,92 @@ Cargo Type: General Cargo / Steel Products`
       const handleMatch = (id) => {
         const rec = records.find(r => r.id === id);
         if (!rec || rec.cat !== 'TONNAGE') return;
+        
+        const openPort = (rec.fields.openPort || '').toLowerCase();
+        const openDate = (rec.fields.openDate || '').toLowerCase();
+        const vesselSizeStr = (rec.fields.vesselSize || '').replace(/,/g, '');
+        const vesselSize = parseInt(vesselSizeStr, 10) || 0;
+        
         const matches = new Set();
         matches.add(id);
+
         records.forEach(r => {
-          if (r.cat === 'CARGO_VC' || r.cat === 'CARGO_TC') matches.add(r.id);
+          if (r.cat !== 'CARGO_VC' && r.cat !== 'CARGO_TC') return;
+          
+          let score = 0;
+          const loadPort = ((r.cat === 'CARGO_VC' ? r.fields.loadPort : r.fields.deliveryPort) || '').toLowerCase();
+          const laycan = (r.fields.laycan || '').toLowerCase();
+
+          // 1. Port/Geographical Match
+          if (openPort && loadPort) {
+            if (openPort.includes(loadPort) || loadPort.includes(openPort)) {
+              score += 3;
+            } else {
+              const openWords = openPort.split(/[\s,()\-–/]+/).filter(w => w.length > 2 && !['port', 'the', 'open', 'for', 'and'].includes(w));
+              const loadWords = loadPort.split(/[\s,()\-–/]+/).filter(w => w.length > 2 && !['port', 'the', 'dely', 'del', 'and'].includes(w));
+              const hasOverlap = openWords.some(ow => loadWords.some(lw => ow.includes(lw) || lw.includes(ow)));
+              if (hasOverlap) {
+                score += 3;
+              }
+            }
+          }
+
+          // 2. Date Match / Laycan Alignment
+          if (openDate && laycan) {
+            const months = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+            const openMonth = months.find(m => openDate.includes(m));
+            const laycanMonth = months.find(m => laycan.includes(m));
+            
+            if (openMonth && laycanMonth) {
+              const openIdx = months.indexOf(openMonth);
+              const laycanIdx = months.indexOf(laycanMonth);
+              
+              if (openIdx === laycanIdx) {
+                score += 2; // Month matches exactly
+              } else if (Math.abs(openIdx - laycanIdx) <= 1) {
+                score += 1; // 1 month diff (reasonable laycan buffer)
+              }
+            }
+          }
+
+          // 3. Size compatibility
+          if (vesselSize > 0) {
+            const rawText = (r.rawEmail || '').toLowerCase();
+            const cargoSizeMatch = rawText.match(/(\d[\d,]+)\s*(?:mt|dwt|tons)/);
+            if (cargoSizeMatch) {
+              const cargoSize = parseInt(cargoSizeMatch[1].replace(/,/g, ''), 10) || 0;
+              if (cargoSize > 0) {
+                // If vessel DWT is larger than cargo size and within 2.5x of cargo size
+                if (vesselSize >= cargoSize && vesselSize <= cargoSize * 2.5) {
+                  score += 2;
+                }
+              }
+            } else if (r.fields.cargoName) {
+              const nameSizeMatch = r.fields.cargoName.match(/(\d[\d,]+)/);
+              if (nameSizeMatch) {
+                const cargoSize = parseInt(nameSizeMatch[1].replace(/,/g, ''), 10) || 0;
+                if (cargoSize > 0 && vesselSize >= cargoSize && vesselSize <= cargoSize * 2.5) {
+                  score += 2;
+                }
+              }
+            }
+          }
+
+          // We highlight if there is a geographical match, or date + size match
+          if (score >= 2) {
+            matches.add(r.id);
+          }
         });
-        setMatchedIds(matches);
-        setActiveTab('ALL');
-        addToast('Matching cargo opportunities highlighted!', 'info', '🔗');
-        setTimeout(() => setMatchedIds(new Set()), 4000);
+
+        if (matches.size > 1) {
+          setMatchedIds(matches);
+          setActiveTab('ALL');
+          addToast(`Found ${matches.size - 1} compatible cargo matches!`, 'success', '🔗');
+        } else {
+          addToast('No compatible cargo matches found for this vessel in the database.', 'warn', '⚠️');
+        }
+
+        setTimeout(() => setMatchedIds(new Set()), 5000);
       };
 
       // Filter
